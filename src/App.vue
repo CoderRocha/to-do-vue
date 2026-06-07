@@ -1,5 +1,52 @@
 <script setup>
 
+import {ref} from 'vue'
+
+const tasks = ref([])
+const newTask = ref('')
+const addTask = () => {
+  if (!newTask.value) return
+  
+  tasks.value.push({
+    id: Date.now(),
+    name: newTask.value,
+    completed: false,
+    state: 'show' // edit, delete
+  })
+  newTask.value = ''
+}
+
+const editTask = (task) => {
+  if (!Object.hasOwn(task, '_name')) {
+    task._name = task.name
+  }
+
+  if (!Object.hasOwn(task, '_completed')) {
+    task._completed = task.completed
+  }
+
+  task.state = 'edit'
+}
+
+const commitTask = (task) => {
+  if (Object.hasOwn(task, '_name')) {
+    task.name = task._name
+  }
+
+  if (Object.hasOwn(task, '_completed')) {
+    task.completed = task._completed
+  }
+
+  task.state = 'show'
+}
+
+const deleteTask = (task) => {
+  const index = tasks.value.findIndex(o => o.id === task.id)
+  if (index !== -1) {
+    tasks.value.splice(index, 1)
+  }
+}
+
 </script>
 
 <template>
@@ -7,7 +54,7 @@
     <h1 class="text-center my-4">Tarefinha</h1>
     
     <!-- Stats -->
-    <div class="card mb-3">
+    <!-- <div class="card mb-3">
       <div class="card-body">
         <div class="row text-center">
           <div class="col-4">
@@ -24,13 +71,16 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
     
     <!-- Add new task -->
     <div class="input-group mb-3">
-      <input type="text" placeholder="Adicionar uma nova tarefa..." class="form-control">
-      <button class="btn btn-success">Adicionar</button>
+      {{ newTask }}
+      <input v-model="newTask" @keyup.enter="addTask" type="text" placeholder="Adicionar uma nova tarefa..." class="form-control">
+      <button @click="addTask" class="btn btn-success">Adicionar</button>
     </div>
+
+    <pre>{{ tasks }}</pre>
  
     <!-- Filters -->
     <div class="d-flex gap-2 mb-3">
@@ -45,40 +95,38 @@
  
     <!-- Tasks -->
     <ul class="list-group">
-      <li class="list-group-item d-flex align-items-center gap-2">
-        <input type="checkbox" class="form-check-input">
-        <span class="flex-grow-1">Refatorar componente de login</span>
-        <button class="btn btn-primary btn-sm">Editar</button>
-        <button class="btn btn-danger btn-sm">Excluir</button>
-      </li>
-      <li class="list-group-item d-flex align-items-center gap-2">
-        <input type="checkbox" class="form-check-input" checked>
-        <span class="flex-grow-1 text-decoration-line-through text-muted">Escrever testes unitários</span>
-        <button class="btn btn-primary btn-sm">Editar</button>
-        <button class="btn btn-danger btn-sm">Excluir</button>
-      </li>
-      <li class="list-group-item d-flex align-items-center gap-2">
-        <input type="checkbox" class="form-check-input">
-        <input type="text" value="Corrigir bug no modal" class="form-control form-control-sm">
-        <button class="btn btn-success btn-sm">Salvar</button>
-        <button class="btn btn-secondary btn-sm">Cancelar</button>
-      </li>
-      <li class="list-group-item d-flex align-items-center gap-2">
+      <li v-for="task in tasks" :key="task.id" class="list-group-item d-flex align-items-center gap-2">
+        <template v-if="task.state === 'show'">
+          <input v-model="task.completed" type="checkbox" class="form-check-input">
+          <span class="flex-grow-1" :class="task.completed ? 'text-decoration-line-through text-muted' : null">{{ task.name }}</span>
+          <button class="btn btn-primary btn-sm" @click="editTask(task)">Editar</button>
+          <button class="btn btn-danger btn-sm" @click="task.state = 'delete'">Excluir</button>
+        </template>
+
+        <template v-else-if="task.state === 'edit'">
+          <input v-model="task._completed" type="checkbox" class="form-check-input">
+          <input v-model="task._name" @keyup.enter="saveTask(task)" type="text" class="form-control form-control-sm">
+          <button class="btn btn-success btn-sm" @click="commitTask(task)">Salvar</button>
+          <button class="btn btn-secondary btn-sm" @click="task.state = 'show'">Cancelar</button>
+        </template>
+
+      <template v-else-if="task.state === 'delete'">
         <span class="flex-grow-1">
-          <div class="fw-semibold">Atualizar documentação da API</div>
+          <div class="fw-semibold">{{ task.name }}</div>
           <div class="text-muted small">Tem certeza que deseja remover?</div>
         </span>
-        <button class="btn btn-danger btn-sm">Sim, excluir</button>
-        <button class="btn btn-outline-secondary btn-sm">Cancelar</button>
+        <button class="btn btn-danger btn-sm" @click="deleteTask(task)">Sim, excluir</button>
+        <button class="btn btn-outline-secondary btn-sm" @click="task.state = 'show'">Cancelar</button>
+      </template>
       </li>
     </ul>
  
     <!-- Empty state -->
-    <div class="card bg-light">
+    <!-- <div class="card bg-light">
       <div class="card-body text-center py-5">
         <p class="text-muted mb-0">Nenhuma tarefa cadastrada</p>
       </div>
-    </div>
+    </div> -->
 </div>
 </template>
 
