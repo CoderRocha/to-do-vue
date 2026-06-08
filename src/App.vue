@@ -1,6 +1,6 @@
 <script setup>
 
-import {ref} from 'vue'
+import {ref, computed} from 'vue'
 
 const tasks = ref([])
 const newTask = ref('')
@@ -47,6 +47,29 @@ const deleteTask = (task) => {
   }
 }
 
+const filterSearch = ref('')
+const filterStatus = ref('')
+const filteredTasks = computed(() => {
+  let output = tasks.value
+  if (filterSearch.value) {
+    const search = filterSearch.value.toLowerCase()
+    output = output.filter(o => o.name.toLowerCase().includes(search))
+  }
+
+  if (filterStatus.value === 'pending') {
+    return output = output.filter(o => !o.completed)
+  } else if (filterStatus.value === 'completed') {
+    return  output = output.filter(o => o.completed)
+  }
+
+  return output;
+})
+
+const clearFilters = () => {
+  filterSearch.value = ''
+  filterStatus.value = ''
+}
+
 </script>
 
 <template>
@@ -81,21 +104,23 @@ const deleteTask = (task) => {
     </div>
 
     <pre>{{ tasks }}</pre>
+    <pre>{{ filteredTasks }}</pre>
  
     <!-- Filters -->
+     {{ filterSearch }} {{ filterStatus }}
     <div class="d-flex gap-2 mb-3">
-      <input type="text" placeholder="Buscar tarefa..." class="form-control" style="flex: 1;">
-      <select class="form-select" style="flex: 1;">
+      <input v-model="filterSearch" type="text" placeholder="Buscar tarefa..." class="form-control" style="flex: 1;">
+      <select v-model="filterStatus" class="form-select" style="flex: 1;">
         <option value="">Todas</option>
         <option value="pending">Pendentes</option>
         <option value="completed">Concluídas</option>
       </select>
-      <button class="btn btn-outline-secondary btn-sm" style="flex-shrink: 0;">Limpar filtros</button>
+      <button @click="clearFilters" class="btn btn-outline-secondary btn-sm" style="flex-shrink: 0;">Limpar filtros</button>
     </div>
  
     <!-- Tasks -->
     <ul class="list-group">
-      <li v-for="task in tasks" :key="task.id" class="list-group-item d-flex align-items-center gap-2">
+      <li v-for="task in filteredTasks" :key="task.id" class="list-group-item d-flex align-items-center gap-2">
         <template v-if="task.state === 'show'">
           <input v-model="task.completed" type="checkbox" class="form-check-input">
           <span class="flex-grow-1" :class="task.completed ? 'text-decoration-line-through text-muted' : null">{{ task.name }}</span>
@@ -120,7 +145,7 @@ const deleteTask = (task) => {
       </template>
       </li>
     </ul>
- 
+
     <!-- Empty state -->
     <!-- <div class="card bg-light">
       <div class="card-body text-center py-5">
