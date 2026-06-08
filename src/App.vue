@@ -77,9 +77,12 @@ const emptyStateMessage = computed(() => {
     output = 'Nenhum resultado para esse filtro'
   }
 
-
   return output;
 })
+
+const totalTasks = computed(() => { return tasks.value.length })
+const totalCompleted = computed(() => { return tasks.value.filter(o => o.completed).length })
+const totalPending = computed(() => { return tasks.value.filter(o => !o.completed).length })
 
 </script>
 
@@ -88,24 +91,25 @@ const emptyStateMessage = computed(() => {
     <h1 class="text-center my-4">Tarefinha</h1>
     
     <!-- Stats -->
-    <!-- <div class="card mb-3">
+     {{ totalTasks }}
+    <div class="card mb-3">
       <div class="card-body">
         <div class="row text-center">
           <div class="col-4">
-            <div class="fw-bold fs-4">3</div>
+            <div class="fw-bold fs-4">{{ totalTasks }}</div>
             <div class="text-muted small">Total</div>
           </div>
           <div class="col-4">
-            <div class="fw-bold fs-4 text-success">1</div>
+            <div class="fw-bold fs-4 text-success">{{ totalCompleted }}</div>
             <div class="text-muted small">Concluídas</div>
           </div>
           <div class="col-4">
-            <div class="fw-bold fs-4 text-warning">2</div>
+            <div class="fw-bold fs-4 text-warning">{{ totalPending }}</div>
             <div class="text-muted small">Pendentes</div>
           </div>
         </div>
       </div>
-    </div> -->
+    </div> 
     
     <!-- Add new task -->
     <div class="input-group mb-3">
