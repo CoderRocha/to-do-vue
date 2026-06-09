@@ -1,43 +1,22 @@
 <script setup>
 
 import {ref, computed} from 'vue'
+import TaskStats from './components/TaskStats.vue'
+import TaskInput from './components/TaskInput.vue'
+import TaskFilters from './components/TaskFilters.vue'
+import TaskList from './components/TaskList.vue'
+import TaskEmptyState from './components/TaskEmptyState.vue'
 
 const tasks = ref([])
-const newTask = ref('')
-const addTask = () => {
-  if (!newTask.value) return
+const addTask = (task) => {
+  if (!task) { return }
   
   tasks.value.push({
     id: Date.now(),
-    name: newTask.value,
+    name: task,
     completed: false,
     state: 'show' // edit, delete
   })
-  newTask.value = ''
-}
-
-const editTask = (task) => {
-  if (!Object.hasOwn(task, '_name')) {
-    task._name = task.name
-  }
-
-  if (!Object.hasOwn(task, '_completed')) {
-    task._completed = task.completed
-  }
-
-  task.state = 'edit'
-}
-
-const commitTask = (task) => {
-  if (Object.hasOwn(task, '_name')) {
-    task.name = task._name
-  }
-
-  if (Object.hasOwn(task, '_completed')) {
-    task.completed = task._completed
-  }
-
-  task.state = 'show'
 }
 
 const deleteTask = (task) => {
@@ -70,6 +49,14 @@ const clearFilters = () => {
   filterStatus.value = ''
 }
 
+const onSearch = (search) => {
+  filterSearch.value = search
+}
+
+const onStatus = (status) => {
+  filterStatus.value = status
+}
+
 const emptyStateMessage = computed(() => {
   let output = 'Nenhuma tarefa cadastrada'
 
@@ -80,93 +67,26 @@ const emptyStateMessage = computed(() => {
   return output;
 })
 
-const totalTasks = computed(() => { return tasks.value.length })
-const totalCompleted = computed(() => { return tasks.value.filter(o => o.completed).length })
-const totalPending = computed(() => { return tasks.value.filter(o => !o.completed).length })
-
 </script>
 
 <template>
   <div class="container" style="max-width: 800px;">
-    <h1 class="text-center my-4">Tarefinha</h1>
+    <h1 class="text-center my-4">To Do Vue</h1>
     
     <!-- Stats -->
-     {{ totalTasks }}
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="row text-center">
-          <div class="col-4">
-            <div class="fw-bold fs-4">{{ totalTasks }}</div>
-            <div class="text-muted small">Total</div>
-          </div>
-          <div class="col-4">
-            <div class="fw-bold fs-4 text-success">{{ totalCompleted }}</div>
-            <div class="text-muted small">Concluídas</div>
-          </div>
-          <div class="col-4">
-            <div class="fw-bold fs-4 text-warning">{{ totalPending }}</div>
-            <div class="text-muted small">Pendentes</div>
-          </div>
-        </div>
-      </div>
-    </div> 
+    <TaskStats :tasks="tasks" />
     
     <!-- Add new task -->
-    <div class="input-group mb-3">
-      {{ newTask }}
-      <input v-model="newTask" @keyup.enter="addTask" type="text" placeholder="Adicionar uma nova tarefa..." class="form-control">
-      <button @click="addTask" class="btn btn-success">Adicionar</button>
-    </div>
-
-    <pre>{{ tasks }}</pre>
-    <pre>{{ filteredTasks }}</pre>
- 
+    <TaskInput @addTask="addTask" />
+    
     <!-- Filters -->
-     {{ filterSearch }} {{ filterStatus }}
-    <div v-if="tasks.length" class="d-flex gap-2 mb-3">
-      <input v-model="filterSearch" type="text" placeholder="Buscar tarefa..." class="form-control" style="flex: 1;">
-      <select v-model="filterStatus" class="form-select" style="flex: 1;">
-        <option value="">Todas</option>
-        <option value="pending">Pendentes</option>
-        <option value="completed">Concluídas</option>
-      </select>
-      <button @click="clearFilters" class="btn btn-outline-secondary btn-sm" style="flex-shrink: 0;">Limpar filtros</button>
-    </div>
- 
+    <TaskFilters v-if="tasks.length" @search="onSearch" @status="onStatus" />
+
     <!-- Tasks -->
-    <ul class="list-group">
-      <li v-for="task in filteredTasks" :key="task.id" class="list-group-item d-flex align-items-center gap-2">
-        <template v-if="task.state === 'show'">
-          <input v-model="task.completed" type="checkbox" class="form-check-input">
-          <span class="flex-grow-1" :class="task.completed ? 'text-decoration-line-through text-muted' : null">{{ task.name }}</span>
-          <button class="btn btn-primary btn-sm" @click="editTask(task)">Editar</button>
-          <button class="btn btn-danger btn-sm" @click="task.state = 'delete'">Excluir</button>
-        </template>
-
-        <template v-else-if="task.state === 'edit'">
-          <input v-model="task._completed" type="checkbox" class="form-check-input">
-          <input v-model="task._name" @keyup.enter="saveTask(task)" type="text" class="form-control form-control-sm">
-          <button class="btn btn-success btn-sm" @click="commitTask(task)">Salvar</button>
-          <button class="btn btn-secondary btn-sm" @click="task.state = 'show'">Cancelar</button>
-        </template>
-
-      <template v-else-if="task.state === 'delete'">
-        <span class="flex-grow-1">
-          <div class="fw-semibold">{{ task.name }}</div>
-          <div class="text-muted small">Tem certeza que deseja remover?</div>
-        </span>
-        <button class="btn btn-danger btn-sm" @click="deleteTask(task)">Sim, excluir</button>
-        <button class="btn btn-outline-secondary btn-sm" @click="task.state = 'show'">Cancelar</button>
-      </template>
-      </li>
-    </ul>
+    <TaskList :tasks="filteredTasks" @delete="deleteTask" />
 
     <!-- Empty state -->
-    <div v-if="!filteredTasks.length" class="card bg-light">
-      <div class="card-body text-center py-5">
-        <p class="text-muted mb-0"> {{ emptyStateMessage }} </p>
-      </div>
-    </div>
+    <TaskEmptyState v-if="!filteredTasks.length" :message="emptyStateMessage" />
 </div>
 </template>
 
